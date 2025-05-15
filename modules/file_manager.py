@@ -23,6 +23,14 @@ def read_file(path):
     except Exception as e:
         return str(e).encode()
 
+def write_file(path, content_b64):
+    try:
+        with open(path, "wb") as f:
+            f.write(base64.b64decode(content_b64))
+        return "[Écrit avec succès]"
+    except Exception as e:
+        return f"Erreur écriture : {e}"
+
 def delete_file(path):
     try:
         os.remove(path)
@@ -36,11 +44,3 @@ def get_metadata(path):
         return f"Taille: {stats.st_size} octets\nCréé: {time.ctime(stats.st_ctime)}\nModifié: {time.ctime(stats.st_mtime)}\nType: {'Dossier' if stat.S_ISDIR(stats.st_mode) else 'Fichier'}"
     except Exception as e:
         return f"Erreur metadata: {e}"
-
-def write_file(path, content_b64):
-    try:
-        with open(path, "wb") as f:
-            f.write(base64.b64decode(content_b64))
-        return "[Écrit avec succès]"
-    except Exception as e:
-        return f"Erreur écriture : {e}"

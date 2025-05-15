@@ -1,5 +1,3 @@
-# modules/keylogger.py
-
 import threading
 from pynput import keyboard
 

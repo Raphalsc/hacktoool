@@ -1,5 +1,3 @@
-# modules/webcam.py
-
 import cv2
 import io
 

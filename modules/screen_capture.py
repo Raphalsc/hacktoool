@@ -1,5 +1,3 @@
-# modules/screen_capture.py
-
 import mss
 import io
 from PIL import Image
